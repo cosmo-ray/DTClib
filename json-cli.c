@@ -15,6 +15,11 @@ int main(int ac, char **av)
 	struct dtc_error_ctx errctx = {};
 
 	for (int i = 1; i < ac; ++i) {
+		if (!strcmp(av[i], "-h") || !strcmp(av[i], "--help")) {
+			printf("%s\n-h, --help\tthis\n"
+			       "-f, --file\tFILE use file instead of stdin\n", av[0]);
+			exit(0);
+		}
 		if (!strcmp(av[i], "-f") || !strcmp(av[i], "--file")) {
 			if (i + 1 == ac) {
 				fprintf(stderr, "-f need an agument\n");

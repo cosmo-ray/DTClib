@@ -6,7 +6,7 @@
 
 #define DTC_UNLIKELY(args...) args
 
-#define DTC_IS_NULL(c) !!(c)
+#define DTC_IS_NULL(c) !(c)
 
 #define DTCLIB_PREFIX json_c
 
@@ -15,7 +15,7 @@
 static int DTC_TAG_NAME(struct json_object *obj_cnt, char name[static 1],
 			size_t name_l)
 {
-	json_object_object_add(obj_cnt, "name", json_object_new_string_len(name, name_l - 1));
+	json_object_object_add(obj_cnt, "name", json_object_new_string_len(name, name_l));
 	return 0;
 }
 
@@ -26,15 +26,22 @@ static struct json_object *DTC_NEW_OBJECT_OBJECT(struct json_object *obj_cnt, ch
 	return r;
 }
 
-static struct json_object *DTC_STORE_ATTRIBUTE(struct json_object *obj_cnt,
-					       char name[static 1], size_t nl,
-					       char val[static 1], size_t vl)
+static struct json_object *DTC_STORE_STRL_KEYL(struct json_object *obj_cnt,
+					       size_t nl, char name[static nl],
+					       size_t vl, char val[static vl])
 {
 	char *tmp = malloc(nl);
 	strncpy(tmp, name, nl);
 	tmp[nl-1] = 0;
-	json_object_object_add(obj_cnt, name, json_object_new_string_len(val, vl - 1));
+	json_object_object_add(obj_cnt, tmp, json_object_new_string_len(val, vl - 1));
 	free(tmp);
+}
+
+static struct json_object *DTC_STORE_STRL_KEY(struct json_object *obj_cnt,
+					      char key[static 1],
+					      size_t vl, char val[static vl])
+{
+	json_object_object_add(obj_cnt, key, json_object_new_string_len(val, vl - 1));
 }
 
 static struct json_object *DTC_NEW_OBJECT(struct json_object *parent_array)

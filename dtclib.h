@@ -16,6 +16,14 @@ struct dtc_error_ctx {
 
 char dtc_err_buff[1024 * 8];
 
+static int dtc_check_tag_name(size_t l, char s[static l],
+			      size_t to_chk_l, char to_check[static to_chk_l])
+{
+	if (to_chk_l != l)
+		return 0;
+	return !memcmp(s, to_check, l);
+}
+
 /* strore cur char in r, advance s pointer, if not \0 */
 static inline int dtc_pre_next(char **s, struct dtc_error_ctx *errptr)
 {
@@ -28,7 +36,7 @@ static inline int dtc_pre_next(char **s, struct dtc_error_ctx *errptr)
 	} else {
 		errptr->col++;
 	}
-	*s++;
+	++*s;
 	return r;
 }
 
@@ -51,7 +59,8 @@ static inline int dtc_skip_name(char **s, struct dtc_error_ctx *errptr)
 
 static inline char *dtc_skip_blank(char *s, struct dtc_error_ctx *errptr)
 {
-	while (isblank(dtc_pre_next(&s, errptr)));
+	while (isblank(*s))
+		dtc_pre_next(&s, errptr);
 	return s;
 }
 
@@ -73,19 +82,32 @@ int DTC_FNAME(dtc_, DTCLIB_PREFIX, _parse_int)(char **html, DTC_PTR parent_array
 						   struct dtc_error_ctx *errptr)
 {
 
+again:
 	if (**html == '<') {
 		DTC_PTR cur = DTC_NEW_OBJECT(parent_array);
 		if (DTC_IS_NULL(cur))
 			goto err;
 		*html += 1;
 		*html = dtc_skip_blank(*html, errptr);
-		if (!html) {
+		if (!*html) {
 			DTC_DIE(err, errptr, "early end");
 		}
 		int have_atribute = 0;
-		for (char *walker = *html; *walker; ++walker) {
+		for (char *walker = *html; *walker; dtc_pre_next(&walker, errptr)) {
 			if (*walker == '>' || isblank(*walker)) {
 				DTC_TAG_NAME(cur, *html, walker - *html);
+				if (dtc_check_tag_name(walker - *html, *html,
+						       sizeof "!doctype" - 1, "!doctype")) {
+					*html = dtc_skip_blank(walker, errptr);
+					walker = *html;
+					while (walker && *walker && *walker != '>')
+						dtc_pre_next(&walker, errptr);
+					if (!walker || !*walker)
+						DTC_DIE(err, errptr, "unclose doctype");
+					DTC_STORE_STRL_KEY(cur, "content", walker - *html, *html);
+					*html = walker;
+					goto again;
+				}
 				have_atribute = isblank(*walker);
 				*html = walker;
 				goto tag_ok;
@@ -110,7 +132,7 @@ int DTC_FNAME(dtc_, DTCLIB_PREFIX, _parse_int)(char **html, DTC_PTR parent_array
 			if (!dtc_skip_alplanum(html, errptr)) {
 				DTC_DIE(err, errptr, "atribute name require");
 			}
-			DTC_STORE_ATTRIBUTE(attribute, name, name_l, value, *html - value);
+			DTC_STORE_STRL_KEYL(attribute, name_l, name, *html - value, value);
 			if (isblank(**html)) {
 				goto anew_attribute;
 			}
