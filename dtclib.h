@@ -64,6 +64,13 @@ static inline char *dtc_skip_blank(char *s, struct dtc_error_ctx *errptr)
 	return s;
 }
 
+static inline char *dtc_skip_blank_n_return(char *s, struct dtc_error_ctx *errptr)
+{
+	while (isblank(*s) || *s == '\n')
+		dtc_pre_next(&s, errptr);
+	return s;
+}
+
 #endif  /* DTC_COOL_FUNCTION */
 
 
@@ -83,6 +90,7 @@ int DTC_FNAME(dtc_, DTCLIB_PREFIX, _parse_int)(char **html, DTC_PTR parent_array
 {
 
 again:
+	*html = dtc_skip_blank_n_return(*html, errptr);
 	if (**html == '<') {
 		DTC_PTR cur = DTC_NEW_OBJECT(parent_array);
 		if (DTC_IS_NULL(cur))
@@ -105,7 +113,7 @@ again:
 					if (!walker || !*walker)
 						DTC_DIE(err, errptr, "unclose doctype");
 					DTC_STORE_STRL_KEY(cur, "content", walker - *html, *html);
-					*html = walker;
+					*html = walker + 1;
 					goto again;
 				}
 				have_atribute = isblank(*walker);
