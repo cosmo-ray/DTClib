@@ -96,6 +96,7 @@ static inline int dtc_skip_str(char **s, struct dtc_error_ctx *errptr)
 		}
 		dtc_next(s, errptr);
 	}
+	dtc_next(s, errptr); /* skip closing " */
 	return 0;
 err:
 	return -1;
@@ -209,9 +210,9 @@ again:
 			if (dtc_skip_name(html, errptr) < 0) {
 				DTC_DIE(err, errptr, "atribute name require");
 			}
-			name_l = *html - name;
+			name_l = *html - name + 1;
 			DTC_SKIP(html, '=', errptr);
-			value = *html;
+			value = *html + 1;
 			if (dtc_skip_str(html, errptr) < 0) {
 				DTC_DIE(err, errptr, "atribute name require");
 			}
@@ -234,22 +235,16 @@ again:
 								     &end, errptr);
 		if (!end)
 			goto not_close_yet;
-		if (dtc_str_eq_nn(tag_name_l, tag_name, *html - end, end)) {
-			DTC_DIE(err, errptr, "trying to sloce the wrong tag :(\n");
+		if (!dtc_str_eq_nn(tag_name_l, tag_name, *html - end, end)) {
+			DTC_DIE(err, errptr, "trying to close the wrong tag got '%*.s' instead of '%.*s' :(\n", *html - end, end, tag_name_l, tag_name);
 		}
 		DTC_SKIP(html, '>', errptr);
 	} else {
 		char *walker;
 		for (walker = *html; *walker != '<' && *walker; dtc_pre_next(&walker, errptr));
-		DTC_PUSH_STRL(parent_array, walker - *html - 1, *html);
+		DTC_PUSH_STRL(parent_array, walker - *html + 1, *html);
 		*html = walker;
 	}
-	// look if in walker == '<'
-	//   parse ball, till > or ','
-	//   push elem into ret
-	//   if in ',', push attribute
-	//   new array contant
-	// else in paragraph
 	return 0;
 err:
 	return -1;
@@ -261,7 +256,6 @@ DTC_PTR DTC_FNAME(dtc_, DTCLIB_PREFIX, _parse)(char html[static 1],
 	DTC_PTR ret = DTC_NEW_ARRAY();
 	if (ret < 0)
 		return NULL;
-	printf(html);
 	if (DTC_FNAME(dtc_, DTCLIB_PREFIX, _parse_int)(&html, ret, NULL, errptr) < 0) {
 		DTC_FREE(ret);
 		return NULL;
