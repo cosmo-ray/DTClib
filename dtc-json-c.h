@@ -33,15 +33,46 @@ static struct json_object *DTC_STORE_STRL_KEYL(struct json_object *obj_cnt,
 	char *tmp = malloc(nl);
 	strncpy(tmp, name, nl);
 	tmp[nl-1] = 0;
-	json_object_object_add(obj_cnt, tmp, json_object_new_string_len(val, vl - 1));
+	json_object *r = json_object_new_string_len(val, vl - 1);
+	if (r)
+		json_object_object_add(obj_cnt, tmp, r);
 	free(tmp);
+	return r;
 }
 
 static struct json_object *DTC_STORE_STRL_KEY(struct json_object *obj_cnt,
 					      char key[static 1],
 					      size_t vl, char val[static vl])
 {
-	json_object_object_add(obj_cnt, key, json_object_new_string_len(val, vl - 1));
+	json_object *r = json_object_new_string_len(val, vl - 1);
+	if (!r)
+		return NULL;
+	json_object_object_add(obj_cnt, key, r);
+	return r;
+}
+
+static struct json_object *DTC_STORE_ARRAY(struct json_object *obj_cnt,
+					   char key[static 1])
+{
+	json_object *r = json_object_new_array();
+	if (DTC_UNLIKELY(!r))
+		return NULL;
+	json_object_object_add(obj_cnt, key, r);
+	return r;
+}
+
+
+static struct json_object *DTC_PUSH_STRL(struct json_object *parent_array, size_t vl, char val[static vl])
+{
+	json_object *r = json_object_new_string_len(val, vl - 1);
+	if (DTC_UNLIKELY(!r))
+		return NULL;
+	size_t s = json_object_array_length(parent_array);
+	if (DTC_UNLIKELY(json_object_array_put_idx(parent_array, s, r) < 0)) {
+		json_object_put(r);
+		return NULL;
+	}
+	return r;
 }
 
 static struct json_object *DTC_NEW_OBJECT(struct json_object *parent_array)

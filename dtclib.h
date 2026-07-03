@@ -16,8 +16,8 @@ struct dtc_error_ctx {
 
 char dtc_err_buff[1024 * 8];
 
-static int dtc_check_tag_name(size_t l, char s[static l],
-			      size_t to_chk_l, char to_check[static to_chk_l])
+static int dtc_str_eq_nn(size_t l, char s[static l],
+			 size_t to_chk_l, char to_check[static to_chk_l])
 {
 	if (to_chk_l != l)
 		return 0;
@@ -71,6 +71,7 @@ static inline char *dtc_skip_blank_n_return(char *s, struct dtc_error_ctx *errpt
 	return s;
 }
 
+
 #endif  /* DTC_COOL_FUNCTION */
 
 
@@ -86,12 +87,30 @@ static inline char *dtc_skip_blank_n_return(char *s, struct dtc_error_ctx *errpt
 	} while (0)
 
 int DTC_FNAME(dtc_, DTCLIB_PREFIX, _parse_int)(char **html, DTC_PTR parent_array,
-						   struct dtc_error_ctx *errptr)
+					       char **tag_end,
+					       struct dtc_error_ctx *errptr)
 {
 
 again:
 	*html = dtc_skip_blank_n_return(*html, errptr);
 	if (**html == '<') {
+		char *tag_name = NULL;
+		size_t tag_name_l = 0;
+		if ((*html)[1] == '/') {
+			if (!tag_end) {
+				DTC_DIE(err, errptr, "closing tag shouldn't be present here\n");
+			}
+			*html += 2; /*</*/
+			*html = dtc_skip_blank(*html, errptr);
+			*tag_end = *html;
+			for (;**html != '>'; dtc_pre_next(html, errptr)) {
+				if (!**html) {
+					DTC_DIE(err, errptr, "bah t'est mort\n");
+				}
+			}
+			return 0;
+
+		}
 		DTC_PTR cur = DTC_NEW_OBJECT(parent_array);
 		if (DTC_IS_NULL(cur))
 			goto err;
@@ -103,9 +122,11 @@ again:
 		int have_atribute = 0;
 		for (char *walker = *html; *walker; dtc_pre_next(&walker, errptr)) {
 			if (*walker == '>' || isblank(*walker)) {
+				tag_name = *html;
+				tag_name_l = walker - *html;
 				DTC_TAG_NAME(cur, *html, walker - *html);
-				if (dtc_check_tag_name(walker - *html, *html,
-						       sizeof "!doctype" - 1, "!doctype")) {
+				if (dtc_str_eq_nn(walker - *html, *html,
+						  sizeof "!doctype" - 1, "!doctype")) {
 					*html = dtc_skip_blank(walker, errptr);
 					walker = *html;
 					while (walker && *walker && *walker != '>')
@@ -144,7 +165,26 @@ again:
 			if (isblank(**html)) {
 				goto anew_attribute;
 			}
+
+
 		}
+		char *end = NULL;
+		DTC_PTR content = DTC_STORE_ARRAY(cur, "content");
+		int rec_ret;
+
+	not_close_yet:
+		rec_ret = DTC_FNAME(dtc_, DTCLIB_PREFIX, _parse_int)(html, content,
+								     &end, errptr);
+		if (!end)
+			goto not_close_yet;
+		if (dtc_str_eq_nn(tag_name_l, tag_name, *html - end, end)) {
+			DTC_DIE(err, errptr, "trying to sloce the wrong tag :(\n");
+		}
+	} else {
+		char *walker;
+		for (walker = *html; *walker != '<' && *walker; dtc_pre_next(&walker, errptr));
+		DTC_PUSH_STRL(parent_array, walker - *html - 1, *html);
+		*html = walker;
 	}
 	// look if in walker == '<'
 	//   parse ball, till > or ','
@@ -164,7 +204,7 @@ DTC_PTR DTC_FNAME(dtc_, DTCLIB_PREFIX, _parse)(char html[static 1],
 	if (ret < 0)
 		return NULL;
 	printf(html);
-	if (DTC_FNAME(dtc_, DTCLIB_PREFIX, _parse_int)(&html, ret, errptr) < 0) {
+	if (DTC_FNAME(dtc_, DTCLIB_PREFIX, _parse_int)(&html, ret, NULL, errptr) < 0) {
 		DTC_FREE(ret);
 		return NULL;
 	}
