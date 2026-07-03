@@ -8,6 +8,17 @@
 #ifndef DTC_COOL_FUNCTION
 #define DTC_COOL_FUNCTION
 
+#define DTC_DIE(label, errstorage, args...) do {	\
+		sprintf(dtc_err_buff, args);		\
+		errstorage->err = dtc_err_buff;		\
+		goto label;				\
+	} while (0)
+
+#define DTC_SKIP(s, what, errptr) do {				\
+		if (dtc_pre_next(s, errptr) != what)		\
+			DTC_DIE(err, errptr, "%c required", what);	\
+	} while (0)
+
 struct dtc_error_ctx {
 	int line;
 	int col;
@@ -24,12 +35,39 @@ static int dtc_str_eq_nn(size_t l, char s[static l],
 	return !memcmp(s, to_check, l);
 }
 
-/* strore cur char in r, advance s pointer, if not \0 */
-static inline int dtc_pre_next(char **s, struct dtc_error_ctx *errptr)
+static int dtc_is_void_elem(size_t el_name_l, char el_name[static el_name_l])
 {
-	int r = **s;
-	if (!r)
-		return r;
+	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "br" - 1, "br"))
+		return 1;
+	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "area" - 1, "area"))
+		return 1;
+	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "base" - 1, "base"))
+		return 1;
+	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "col" - 1, "col"))
+		return 1;
+	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "embed" - 1, "embed"))
+		return 1;
+	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "hr" - 1, "hr"))
+		return 1;
+	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "img" - 1, "img"))
+		return 1;
+	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "input" - 1, "input"))
+		return 1;
+	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "link" - 1, "link"))
+		return 1;
+	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "meta" - 1, "meta"))
+		return 1;
+	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "source" - 1, "source"))
+		return 1;
+	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "track" - 1, "track"))
+		return 1;
+	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "wbr" - 1, "wbr"))
+		return 1;
+	return 0;
+}
+
+static void dtc_next(char **s, struct dtc_error_ctx *errptr)
+{
 	if (**s == '\n') {
 		errptr->line++;
 		errptr->col = 0;
@@ -37,14 +75,41 @@ static inline int dtc_pre_next(char **s, struct dtc_error_ctx *errptr)
 		errptr->col++;
 	}
 	++*s;
+}
+
+/* strore cur char in r, advance s pointer, if not \0 */
+static inline int dtc_pre_next(char **s, struct dtc_error_ctx *errptr)
+{
+	int r = **s;
+	if (!r)
+		return r;
+	dtc_next(s, errptr);
 	return r;
 }
 
-static inline int dtc_skip_alplanum(char **s, struct dtc_error_ctx *errptr)
+static inline int dtc_skip_str(char **s, struct dtc_error_ctx *errptr)
 {
+	DTC_SKIP(s, '"', errptr);
+	while (**s != '"') {
+		if (!**s) {
+			DTC_DIE(err, errptr, "unclose str");
+		}
+		dtc_next(s, errptr);
+	}
+	return 0;
+err:
+	return -1;
+}
+
+static inline int dtc_skip_name_chars(char **s, struct dtc_error_ctx *errptr)
+{
+	int cur = **s;
 	int r = 0;
-	while(isalnum(dtc_pre_next(s, errptr)))
+	while(isalnum(cur) || cur == '-' || cur == '_') {
+		dtc_next(s, errptr);
+		cur = **s;
 		r++;
+	}
 	return r;
 }
 
@@ -53,7 +118,7 @@ static inline int dtc_skip_name(char **s, struct dtc_error_ctx *errptr)
 	if (!isalpha(dtc_pre_next(s, errptr))) {
 		return -1;
 	}
-	return dtc_skip_alplanum(s, errptr);
+	return dtc_skip_name_chars(s, errptr);
 }
 
 
@@ -74,17 +139,6 @@ static inline char *dtc_skip_blank_n_return(char *s, struct dtc_error_ctx *errpt
 
 #endif  /* DTC_COOL_FUNCTION */
 
-
-#define DTC_DIE(label, errstorage, args...) do {	\
-		sprintf(dtc_err_buff, args);		\
-		errstorage->err = dtc_err_buff;		\
-		goto label;				\
-	} while (0)
-
-#define DTC_SKIP(s, what, errptr) do {				\
-		if (dtc_pre_next(s, errptr) != what)		\
-			DTC_DIE(err, errptr, "%c required", what);	\
-	} while (0)
 
 int DTC_FNAME(dtc_, DTCLIB_PREFIX, _parse_int)(char **html, DTC_PTR parent_array,
 					       char **tag_end,
@@ -152,13 +206,13 @@ again:
 		anew_attribute:
 			*html = dtc_skip_blank(*html, errptr);
 			name = *html;
-			name_l = *html - name;
 			if (dtc_skip_name(html, errptr) < 0) {
 				DTC_DIE(err, errptr, "atribute name require");
 			}
+			name_l = *html - name;
 			DTC_SKIP(html, '=', errptr);
 			value = *html;
-			if (!dtc_skip_alplanum(html, errptr)) {
+			if (dtc_skip_str(html, errptr) < 0) {
 				DTC_DIE(err, errptr, "atribute name require");
 			}
 			DTC_STORE_STRL_KEYL(attribute, name_l, name, *html - value, value);
@@ -168,6 +222,9 @@ again:
 
 
 		}
+		DTC_SKIP(html, '>', errptr);
+		if (dtc_is_void_elem(tag_name_l, tag_name))
+			return 0;
 		char *end = NULL;
 		DTC_PTR content = DTC_STORE_ARRAY(cur, "content");
 		int rec_ret;
@@ -180,6 +237,7 @@ again:
 		if (dtc_str_eq_nn(tag_name_l, tag_name, *html - end, end)) {
 			DTC_DIE(err, errptr, "trying to sloce the wrong tag :(\n");
 		}
+		DTC_SKIP(html, '>', errptr);
 	} else {
 		char *walker;
 		for (walker = *html; *walker != '<' && *walker; dtc_pre_next(&walker, errptr));
