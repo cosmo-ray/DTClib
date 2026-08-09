@@ -30,16 +30,18 @@ int main(int ac, char **av)
 		}
 	}
 
-	while (rret = read(fd, tmp, 1024)) {
+	while ((rret = read(fd, tmp, 1023))) {
 		if (rret < 0) {
 			fprintf(stderr, "read fail");
 			return 1;
 		}
-		file = realloc(file, off + rret);
+		file = realloc(file, off + rret + 1);
 		memcpy(file + off, tmp, rret);
 		off += rret;
+		file[off] = 0;
 	}
 	struct json_object *jret = dtc_json_c_parse(file, &errctx);
+	free(file);
 	if (!jret)
 		fprintf(stderr, "error at line %d col %d: %s\n", errctx.line,
 			errctx.col,
@@ -47,4 +49,7 @@ int main(int ac, char **av)
 	printf("%s",
 	       json_object_to_json_string_ext(jret, JSON_C_TO_STRING_PRETTY |
 					      JSON_C_TO_STRING_NOSLASHESCAPE));
+	json_object_put(jret);
+	if (fd)
+		close(fd);
 }

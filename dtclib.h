@@ -1,6 +1,12 @@
 #include <ctype.h>
 #include <string.h>
 
+#ifdef DTC_NO_THREAD
+#define THREAD_LOCAL
+#else
+#define THREAD_LOCAL thread_local
+#endif
+
 #define DTC_KCAT(a,b,c) a##b##c
 
 #define DTC_FNAME(a,b,c) DTC_KCAT(a,b,c)
@@ -8,8 +14,10 @@
 #ifndef DTC_COOL_FUNCTION
 #define DTC_COOL_FUNCTION
 
+#define DTC_ERROR_BUF_SIZE (1024 * 8)
+
 #define DTC_DIE(label, errstorage, args...) do {	\
-		sprintf(dtc_err_buff, args);		\
+		snprintf(dtc_err_buff, DTC_ERROR_BUF_SIZE, args);	\
 		errstorage->err = dtc_err_buff;		\
 		goto label;				\
 	} while (0)
@@ -25,14 +33,14 @@ struct dtc_error_ctx {
 	char *err;
 };
 
-char dtc_err_buff[1024 * 8];
+THREAD_LOCAL static char dtc_err_buff[DTC_ERROR_BUF_SIZE];
 
 static int dtc_str_eq_nn(size_t l, char s[static l],
 			 size_t to_chk_l, char to_check[static to_chk_l])
 {
 	if (to_chk_l != l)
 		return 0;
-	return !memcmp(s, to_check, l);
+	return !strncasecmp(s, to_check, l);
 }
 
 static int dtc_is_void_elem(size_t el_name_l, char el_name[static el_name_l])
@@ -188,7 +196,7 @@ again:
 						dtc_pre_next(&walker, errptr);
 					if (!walker || !*walker)
 						DTC_DIE(err, errptr, "unclose doctype");
-					DTC_STORE_STRL_KEY(cur, "content", walker - *html, *html);
+					DTC_STORE_STRL_KEY(cur, "content", walker - *html + 1, *html);
 					*html = walker + 1;
 					goto again;
 				}
@@ -210,7 +218,7 @@ again:
 			if (dtc_skip_name(html, errptr) < 0) {
 				DTC_DIE(err, errptr, "atribute name require");
 			}
-			name_l = *html - name + 1;
+			name_l = *html - name;
 			DTC_SKIP(html, '=', errptr);
 			value = *html + 1;
 			if (dtc_skip_str(html, errptr) < 0) {
@@ -236,7 +244,7 @@ again:
 		if (!end)
 			goto not_close_yet;
 		if (!dtc_str_eq_nn(tag_name_l, tag_name, *html - end, end)) {
-			DTC_DIE(err, errptr, "trying to close the wrong tag got '%*.s' instead of '%.*s' :(\n", *html - end, end, tag_name_l, tag_name);
+			DTC_DIE(err, errptr, "trying to close the wrong tag got '%*.s' instead of '%.*s' :(\n", (int)(*html - end), end, (int)tag_name_l, tag_name);
 		}
 		DTC_SKIP(html, '>', errptr);
 	} else {
@@ -254,7 +262,7 @@ DTC_PTR DTC_FNAME(dtc_, DTCLIB_PREFIX, _parse)(char html[static 1],
 					       struct dtc_error_ctx *errptr)
 {
 	DTC_PTR ret = DTC_NEW_ARRAY();
-	if (ret < 0)
+	if (!ret)
 		return NULL;
 	if (DTC_FNAME(dtc_, DTCLIB_PREFIX, _parse_int)(&html, ret, NULL, errptr) < 0) {
 		DTC_FREE(ret);

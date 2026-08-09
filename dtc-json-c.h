@@ -30,9 +30,9 @@ static struct json_object *DTC_STORE_STRL_KEYL(struct json_object *obj_cnt,
 					       size_t nl, char name[static nl],
 					       size_t vl, char val[static vl])
 {
-	char *tmp = malloc(nl);
+	char *tmp = malloc(nl+1);
 	strncpy(tmp, name, nl);
-	tmp[nl-1] = 0;
+	tmp[nl] = 0;
 	json_object *r = json_object_new_string_len(val, vl - 1);
 	if (r)
 		json_object_object_add(obj_cnt, tmp, r);
