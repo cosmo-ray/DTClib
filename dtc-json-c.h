@@ -6,6 +6,8 @@
 
 #define DTC_UNLIKELY(args...) args
 
+#define DTC_NULL NULL
+
 #define DTC_IS_NULL(c) !(c)
 
 #define DTCLIB_PREFIX json_c

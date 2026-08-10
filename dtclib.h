@@ -33,17 +33,152 @@ struct dtc_error_ctx {
 	char *err;
 };
 
+#define DTC_HTML_TAGS \
+	DTC_TOK(a)				\
+	DTC_TOK(abbr)				\
+	DTC_TOK(address)			\
+	DTC_TOK(area)				\
+	DTC_TOK(article)			\
+	DTC_TOK(aside)				\
+	DTC_TOK(audio)				\
+	DTC_TOK(b)				\
+	DTC_TOK(base)				\
+	DTC_TOK(bdi)				\
+	DTC_TOK(bdo)				\
+	DTC_TOK(blockquote)			\
+	DTC_TOK(body)				\
+	DTC_TOK(br)				\
+	DTC_TOK(button)				\
+	DTC_TOK(canvas)				\
+	DTC_TOK(caption)			\
+	DTC_TOK(cite)				\
+	DTC_TOK(code)				\
+	DTC_TOK(col)				\
+	DTC_TOK(colgroup)			\
+	DTC_TOK(data)				\
+	DTC_TOK(datalist)			\
+	DTC_TOK(dd)				\
+	DTC_TOK(del)				\
+	DTC_TOK(details)			\
+	DTC_TOK(dfn)				\
+	DTC_TOK(dialog)				\
+	DTC_TOK(div)				\
+	DTC_TOK(dl)				\
+	DTC_TOK(dt)				\
+	DTC_TOK(em)				\
+	DTC_TOK(embed)				\
+	DTC_TOK(fieldset)			\
+	DTC_TOK(figcaption)			\
+	DTC_TOK(figure)				\
+	DTC_TOK(footer)				\
+	DTC_TOK(form)				\
+	DTC_TOK(h1)				\
+	DTC_TOK(h2)				\
+	DTC_TOK(h3)				\
+	DTC_TOK(h4)				\
+	DTC_TOK(h5)				\
+	DTC_TOK(h6)				\
+	DTC_TOK(head)				\
+	DTC_TOK(header)				\
+	DTC_TOK(hgroup)				\
+	DTC_TOK(hr)				\
+	DTC_TOK(html)				\
+	DTC_TOK(i)				\
+	DTC_TOK(iframe)				\
+	DTC_TOK(img)				\
+	DTC_TOK(input)				\
+	DTC_TOK(ins)				\
+	DTC_TOK(kbd)				\
+	DTC_TOK(label)				\
+	DTC_TOK(legend)				\
+	DTC_TOK(li)				\
+	DTC_TOK(link)				\
+	DTC_TOK(main)				\
+	DTC_TOK(map)				\
+	DTC_TOK(mark)				\
+	DTC_TOK(menu)				\
+	DTC_TOK(meta)				\
+	DTC_TOK(meter)				\
+	DTC_TOK(nav)				\
+	DTC_TOK(noscript)			\
+	DTC_TOK(object)				\
+	DTC_TOK(ol)				\
+	DTC_TOK(optgroup)			\
+	DTC_TOK(option)				\
+	DTC_TOK(output)				\
+	DTC_TOK(p)				\
+	DTC_TOK(picture)			\
+	DTC_TOK(pre)				\
+	DTC_TOK(progress)			\
+	DTC_TOK(q)				\
+	DTC_TOK(rp)				\
+	DTC_TOK(rt)				\
+	DTC_TOK(ruby)				\
+	DTC_TOK(s)				\
+	DTC_TOK(samp)				\
+	DTC_TOK(script)				\
+	DTC_TOK(search)				\
+	DTC_TOK(section)			\
+	DTC_TOK(select)				\
+	DTC_TOK(slot)				\
+	DTC_TOK(small)				\
+	DTC_TOK(source)				\
+	DTC_TOK(span)				\
+	DTC_TOK(strong)				\
+	DTC_TOK(style)				\
+	DTC_TOK(sub)				\
+	DTC_TOK(summary)			\
+	DTC_TOK(sup)				\
+	DTC_TOK(table)				\
+	DTC_TOK(tbody)				\
+	DTC_TOK(td)				\
+	DTC_TOK(template)			\
+	DTC_TOK(textarea)			\
+	DTC_TOK(tfoot)				\
+	DTC_TOK(th)				\
+	DTC_TOK(thead)				\
+	DTC_TOK(time)				\
+	DTC_TOK(title)				\
+	DTC_TOK(tr)				\
+	DTC_TOK(track)				\
+	DTC_TOK(u)				\
+	DTC_TOK(ul)				\
+	DTC_TOK(var)				\
+	DTC_TOK(video)				\
+	DTC_TOK(wbr)
+
+#define DTC_TOK(x) DTC_HTML_##x,
+enum dtc_html_tag {
+	DTC_HTML_TAGS
+	DTC_HTML_TAG_END
+};
+#undef DTC_TOK
+
+#define DTC_TOK(x) #x,
+static const char *dtc_html_tag_names[] = {
+	DTC_HTML_TAGS
+	NULL
+};
+#undef DTC_TOK
+
+#define DTC_TOK(x) sizeof #x - 1,
+static size_t dtc_html_tag_names_l[] = {
+	DTC_HTML_TAGS
+	0
+};
+#undef DTC_TOK
+
 THREAD_LOCAL static char dtc_err_buff[DTC_ERROR_BUF_SIZE];
 
-static int dtc_str_eq_nn(size_t l, char s[static l],
-			 size_t to_chk_l, char to_check[static to_chk_l])
+static int dtc_str_eq_nn(size_t l, const char s[static l],
+			 size_t to_chk_l, const char to_check[static to_chk_l])
 {
 	if (to_chk_l != l)
 		return 0;
 	return !strncasecmp(s, to_check, l);
 }
 
-static int dtc_is_void_elem(size_t el_name_l, char el_name[static el_name_l])
+static int dtc_is_void_elem(size_t el_name_l, const char el_name[static el_name_l])
 {
 	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "br" - 1, "br"))
 		return 1;
@@ -72,6 +207,18 @@ static int dtc_is_void_elem(size_t el_name_l, char el_name[static el_name_l])
 	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "wbr" - 1, "wbr"))
 		return 1;
 	return 0;
+}
+
+int dtc_html_tag(size_t tag_name_l, char tag_name[static tag_name_l])
+{
+	/* cast in int for C++ compat, maybe someday */
+	for (int i = 0; i < (int)DTC_HTML_TAG_END; ++i) {
+		if (dtc_str_eq_nn(tag_name_l, tag_name,
+				  dtc_html_tag_names_l[i], dtc_html_tag_names[i])) {
+			return i;
+		}
+	}
+	return -1;
 }
 
 static void dtc_next(char **s, struct dtc_error_ctx *errptr)
@@ -153,12 +300,17 @@ int DTC_FNAME(dtc_, DTCLIB_PREFIX, _parse_int)(char **html, DTC_PTR parent_array
 					       char **tag_end,
 					       struct dtc_error_ctx *errptr)
 {
+	char *in_tmp;
+	struct dtc_error_ctx errbak = *errptr;
 
 again:
 	*html = dtc_skip_blank_n_return(*html, errptr);
+	in_tmp = *html;
 	if (**html == '<') {
 		char *tag_name = NULL;
 		size_t tag_name_l = 0;
+		int what_tag;
+
 		if ((*html)[1] == '/') {
 			if (!tag_end) {
 				DTC_DIE(err, errptr, "closing tag shouldn't be present here\n");
@@ -172,41 +324,51 @@ again:
 				}
 			}
 			return 0;
-
 		}
+
 		DTC_PTR cur = DTC_NEW_OBJECT(parent_array);
 		if (DTC_IS_NULL(cur))
 			goto err;
-		*html += 1;
-		*html = dtc_skip_blank(*html, errptr);
 		if (!*html) {
 			DTC_DIE(err, errptr, "early end");
 		}
+
+		*html += 1;
+		*html = dtc_skip_blank(*html, errptr);
+
+		char *walker;
 		int have_atribute = 0;
-		for (char *walker = *html; *walker; dtc_pre_next(&walker, errptr)) {
-			if (*walker == '>' || isblank(*walker)) {
-				tag_name = *html;
-				tag_name_l = walker - *html;
-				DTC_TAG_NAME(cur, *html, walker - *html);
-				if (dtc_str_eq_nn(walker - *html, *html,
-						  sizeof "!doctype" - 1, "!doctype")) {
-					*html = dtc_skip_blank(walker, errptr);
-					walker = *html;
-					while (walker && *walker && *walker != '>')
-						dtc_pre_next(&walker, errptr);
-					if (!walker || !*walker)
-						DTC_DIE(err, errptr, "unclose doctype");
-					DTC_STORE_STRL_KEY(cur, "content", walker - *html + 1, *html);
-					*html = walker + 1;
-					goto again;
-				}
-				have_atribute = isblank(*walker);
-				*html = walker;
+		for (walker = *html; *walker; dtc_pre_next(&walker, errptr)) {
+			if (*walker == '>' || isblank(*walker))
 				goto tag_ok;
-			}
 		}
 		goto err;
 	tag_ok:
+		tag_name = *html;
+		tag_name_l = walker - *html;
+		DTC_TAG_NAME(cur, *html, tag_name_l);
+		if (dtc_str_eq_nn(tag_name_l, *html,
+				  sizeof "!doctype" - 1, "!doctype")) {
+			*html = dtc_skip_blank(walker, errptr);
+			walker = *html;
+			while (walker && *walker && *walker != '>')
+				dtc_pre_next(&walker, errptr);
+			if (!walker || !*walker)
+				DTC_DIE(err, errptr, "unclose doctype");
+			DTC_STORE_STRL_KEY(cur, "content", walker - *html + 1, *html);
+			*html = walker + 1;
+			goto again;
+		}
+		what_tag = dtc_html_tag(tag_name_l, tag_name);
+		if (what_tag < 0) {
+			*errptr = errbak;
+			*html = in_tmp;
+			printf("go to not a tag\n");
+			goto not_a_tag;
+		}
+		have_atribute = isblank(*walker);
+		*html = walker;
+
 		if (have_atribute) {
 			char *name;
 			char *value;
@@ -249,7 +411,24 @@ again:
 		DTC_SKIP(html, '>', errptr);
 	} else {
 		char *walker;
-		for (walker = *html; *walker != '<' && *walker; dtc_pre_next(&walker, errptr));
+	not_a_tag:
+		for (walker = *html; *walker; dtc_pre_next(&walker, errptr)) {
+			if (*walker == '<') {
+				errbak = *errptr;
+				char *tmp = dtc_skip_blank(walker + 1, errptr);
+
+				if (*tmp == '/')
+					dtc_next(&tmp, errptr);
+				int len = 1;
+				while (tmp[len] && !isblank(tmp[len]) &&tmp[len] != '>')
+					++len;
+				if (dtc_html_tag(len, tmp) >= 0) {
+					*errptr = errbak;
+					break;
+				}
+				walker = tmp - 1;
+			}
+		}
 		DTC_PUSH_STRL(parent_array, walker - *html + 1, *html);
 		*html = walker;
 	}
@@ -262,11 +441,11 @@ DTC_PTR DTC_FNAME(dtc_, DTCLIB_PREFIX, _parse)(char html[static 1],
 					       struct dtc_error_ctx *errptr)
 {
 	DTC_PTR ret = DTC_NEW_ARRAY();
-	if (!ret)
-		return NULL;
+	if (DTC_IS_NULL(ret))
+		return DTC_NULL;
 	if (DTC_FNAME(dtc_, DTCLIB_PREFIX, _parse_int)(&html, ret, NULL, errptr) < 0) {
 		DTC_FREE(ret);
-		return NULL;
+		return DTC_NULL;
 	}
 	return ret;
 }
