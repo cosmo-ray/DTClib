@@ -178,33 +178,33 @@ static int dtc_str_eq_nn(size_t l, const char s[static l],
 	return !strncasecmp(s, to_check, l);
 }
 
-static int dtc_is_void_elem(size_t el_name_l, const char el_name[static el_name_l])
+static int dtc_is_void_elem(int tag)
 {
-	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "br" - 1, "br"))
+	if (tag == DTC_HTML_br)
 		return 1;
-	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "area" - 1, "area"))
+	if (tag == DTC_HTML_area)
 		return 1;
-	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "base" - 1, "base"))
+	if (tag == DTC_HTML_base)
 		return 1;
-	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "col" - 1, "col"))
+	if (tag == DTC_HTML_col)
 		return 1;
-	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "embed" - 1, "embed"))
+	if (tag == DTC_HTML_embed)
 		return 1;
-	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "hr" - 1, "hr"))
+	if (tag == DTC_HTML_hr)
 		return 1;
-	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "img" - 1, "img"))
+	if (tag == DTC_HTML_img)
 		return 1;
-	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "input" - 1, "input"))
+	if (tag == DTC_HTML_input)
 		return 1;
-	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "link" - 1, "link"))
+	if (tag == DTC_HTML_link)
 		return 1;
-	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "meta" - 1, "meta"))
+	if (tag == DTC_HTML_meta)
 		return 1;
-	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "source" - 1, "source"))
+	if (tag == DTC_HTML_source)
 		return 1;
-	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "track" - 1, "track"))
+	if (tag == DTC_HTML_track)
 		return 1;
-	if (dtc_str_eq_nn(el_name_l, el_name, sizeof "wbr" - 1, "wbr"))
+	if (tag == DTC_HTML_wbr)
 		return 1;
 	return 0;
 }
@@ -394,7 +394,7 @@ again:
 
 		}
 		DTC_SKIP(html, '>', errptr);
-		if (dtc_is_void_elem(tag_name_l, tag_name))
+		if (dtc_is_void_elem(what_tag))
 			return 0;
 		char *end = NULL;
 		DTC_PTR content = DTC_STORE_ARRAY(cur, "content");
