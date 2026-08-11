@@ -301,11 +301,12 @@ int DTC_FNAME(dtc_, DTCLIB_PREFIX, _parse_int)(char **html, DTC_PTR parent_array
 					       struct dtc_error_ctx *errptr)
 {
 	char *in_tmp;
-	struct dtc_error_ctx errbak = *errptr;
+	struct dtc_error_ctx errbak;
 
 again:
 	*html = dtc_skip_blank_n_return(*html, errptr);
 	in_tmp = *html;
+	errbak = *errptr;
 	if (**html == '<') {
 		char *tag_name = NULL;
 		size_t tag_name_l = 0;
@@ -405,7 +406,7 @@ again:
 		if (!end)
 			goto not_close_yet;
 		if (!dtc_str_eq_nn(tag_name_l, tag_name, *html - end, end)) {
-			DTC_DIE(err, errptr, "trying to close the wrong tag got '%*.s' instead of '%.*s' :(\n", (int)(*html - end), end, (int)tag_name_l, tag_name);
+			DTC_DIE(err, errptr, "trying to close the wrong tag got '%.*s' instead of '%.*s' :(\n", (int)(*html - end), end, (int)tag_name_l, tag_name);
 		}
 		DTC_SKIP(html, '>', errptr);
 	} else {
