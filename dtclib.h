@@ -363,7 +363,6 @@ again:
 		if (what_tag < 0) {
 			*errptr = errbak;
 			*html = in_tmp;
-			printf("go to not a tag\n");
 			goto not_a_tag;
 		}
 		have_atribute = isblank(*walker);
