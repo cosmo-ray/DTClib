@@ -232,6 +232,17 @@ static void dtc_next(char **s, struct dtc_error_ctx *errptr)
 	++*s;
 }
 
+static void dtc_back(char **s, struct dtc_error_ctx *errptr)
+{
+	--*s;
+	if (**s == '\n') {
+		/* we lose col cnt here, so can be buggy */
+		errptr->line--;
+	} else {
+		errptr->col--;
+	}
+}
+
 /* strore cur char in r, advance s pointer, if not \0 */
 static inline int dtc_pre_next(char **s, struct dtc_error_ctx *errptr)
 {
@@ -272,6 +283,7 @@ static inline int dtc_skip_name_chars(char **s, struct dtc_error_ctx *errptr)
 static inline int dtc_skip_name(char **s, struct dtc_error_ctx *errptr)
 {
 	if (!isalpha(dtc_pre_next(s, errptr))) {
+		dtc_back(s, errptr);
 		return -1;
 	}
 	return dtc_skip_name_chars(s, errptr);
@@ -368,6 +380,10 @@ again:
 		}
 		have_atribute = isblank(*walker);
 		*html = walker;
+		if (have_atribute) {
+			*html = dtc_skip_blank(*html, errptr);
+			have_atribute = !(**html == '/' || **html == '>');
+		}
 
 		if (have_atribute) {
 			char *name;
@@ -375,23 +391,28 @@ again:
 			size_t name_l;
 			DTC_PTR attribute = DTC_NEW_OBJECT_OBJECT(cur, "attributes");
 		anew_attribute:
-			*html = dtc_skip_blank(*html, errptr);
 			name = *html;
 			if (dtc_skip_name(html, errptr) < 0) {
-				DTC_DIE(err, errptr, "atribute name require");
+				DTC_DIE(err, errptr, "atribute name require in %.*s tag, invalide character '%c'",
+					(int)tag_name_l, tag_name, **html);
 			}
 			name_l = *html - name;
 			DTC_SKIP(html, '=', errptr);
 			value = *html + 1;
 			if (dtc_skip_str(html, errptr) < 0) {
-				DTC_DIE(err, errptr, "atribute name require");
+				DTC_DIE(err, errptr, "atribute '%.*s' require thing after =",
+					(int)name_l, name);
 			}
 			DTC_STORE_STRL_KEYL(attribute, name_l, name, *html - value, value);
-			if (isblank(**html)) {
+			*html = dtc_skip_blank(*html, errptr);
+			if (**html != '/' && **html != '>') {
 				goto anew_attribute;
 			}
 
 
+		}
+		if (**html == '/') {
+			dtc_next(html, errptr);
 		}
 		DTC_SKIP(html, '>', errptr);
 		if (dtc_is_void_elem(what_tag))
@@ -403,6 +424,8 @@ again:
 	not_close_yet:
 		rec_ret = DTC_FNAME(dtc_, DTCLIB_PREFIX, _parse_int)(html, content,
 								     &end, errptr);
+		if (rec_ret < 0)
+			return -1;
 		if (!end)
 			goto not_close_yet;
 		if (!dtc_str_eq_nn(tag_name_l, tag_name, *html - end, end)) {
