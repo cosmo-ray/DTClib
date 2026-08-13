@@ -397,13 +397,18 @@ again:
 					(int)tag_name_l, tag_name, **html);
 			}
 			name_l = *html - name;
-			DTC_SKIP(html, '=', errptr);
-			value = *html + 1;
-			if (dtc_skip_str(html, errptr) < 0) {
-				DTC_DIE(err, errptr, "atribute '%.*s' require thing after =",
-					(int)name_l, name);
+			// need fir for atribute like itemscope
+			if (**html == '=') {
+				dtc_next(html, errptr);
+				value = *html + 1;
+				if (dtc_skip_str(html, errptr) < 0) {
+					DTC_DIE(err, errptr, "atribute '%.*s' require thing after =",
+						(int)name_l, name);
+				}
+				DTC_STORE_STRL_KEYL(attribute, name_l, name, *html - value, value);
+			} else {
+				DTC_STORE_BOOL_KEYL(attribute, name_l, name, 1);
 			}
-			DTC_STORE_STRL_KEYL(attribute, name_l, name, *html - value, value);
 			*html = dtc_skip_blank(*html, errptr);
 			if (**html != '/' && **html != '>') {
 				goto anew_attribute;

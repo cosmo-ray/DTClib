@@ -32,13 +32,34 @@ static struct json_object *DTC_STORE_STRL_KEYL(struct json_object *obj_cnt,
 					       size_t nl, char name[static nl],
 					       size_t vl, char val[static vl])
 {
-	char *tmp = malloc(nl+1);
-	strncpy(tmp, name, nl);
+	char tmp_buf[16];
+	char *tmp = nl + 1 < sizeof tmp_buf ? tmp_buf : malloc(nl+1);
+	memcpy(tmp, name, nl);
 	tmp[nl] = 0;
 	json_object *r = json_object_new_string_len(val, vl - 1);
 	if (r)
 		json_object_object_add(obj_cnt, tmp, r);
-	free(tmp);
+	if (tmp != tmp_buf)
+		free(tmp);
+	return r;
+}
+
+static struct json_object *DTC_STORE_BOOL_KEYL(struct json_object *obj_cnt,
+					       size_t nl, char name[static nl],
+					       _Bool val)
+{
+	char tmp_buf[16];
+	char *tmp = nl + 1 < sizeof tmp_buf ? tmp_buf : malloc(nl+1);
+	if (!tmp)
+		return NULL;
+	memcpy(tmp, name, nl);
+	tmp[nl] = 0;
+	json_object *r = json_object_new_boolean(val);
+	if (r)
+		json_object_object_add(obj_cnt, tmp, r);
+
+	if (tmp != tmp_buf)
+		free(tmp);
 	return r;
 }
 
