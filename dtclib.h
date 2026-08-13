@@ -292,14 +292,15 @@ static inline int dtc_skip_name(char **s, struct dtc_error_ctx *errptr)
 
 static inline char *dtc_skip_blank(char *s, struct dtc_error_ctx *errptr)
 {
-	while (isblank(*s))
+	while (isblank(*s)) {
 		dtc_pre_next(&s, errptr);
+	}
 	return s;
 }
 
 static inline char *dtc_skip_blank_n_return(char *s, struct dtc_error_ctx *errptr)
 {
-	while (isblank(*s) || *s == '\n')
+	while (isblank(*s) || *s == '\n' || *s == '\r')
 		dtc_pre_next(&s, errptr);
 	return s;
 }
@@ -381,7 +382,7 @@ again:
 		have_atribute = isblank(*walker);
 		*html = walker;
 		if (have_atribute) {
-			*html = dtc_skip_blank(*html, errptr);
+			*html = dtc_skip_blank_n_return(*html, errptr);
 			have_atribute = !(**html == '/' || **html == '>');
 		}
 
@@ -409,7 +410,7 @@ again:
 			} else {
 				DTC_STORE_BOOL_KEYL(attribute, name_l, name, 1);
 			}
-			*html = dtc_skip_blank(*html, errptr);
+			*html = dtc_skip_blank_n_return(*html, errptr);
 			if (**html != '/' && **html != '>') {
 				goto anew_attribute;
 			}
