@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dtclib"
+version = "0.1.0"
+
+[tool.setuptools]
+packages = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.5"
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/python"]

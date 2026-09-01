@@ -1,0 +1,11 @@
+.venv/
+build/
+*.egg-info/
+*.so
+__pycache__/
+*.pyc
+.pytest_cache/
+json-cli
+*~
+\#*\#
+
