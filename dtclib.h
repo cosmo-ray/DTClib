@@ -428,6 +428,8 @@ again:
 		int rec_ret;
 
 	not_close_yet:
+		if (!**html)
+			DTC_DIE(err, errptr, "unclosed tag '%.*s'", (int)tag_name_l, tag_name);
 		rec_ret = DTC_FNAME(dtc_, DTCLIB_PREFIX, _parse_int)(html, content,
 								     &end, errptr);
 		if (rec_ret < 0)
