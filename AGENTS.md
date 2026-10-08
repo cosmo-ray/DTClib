@@ -79,3 +79,37 @@ result = dtclib.parse("<html><body>hello</body></html>")
 
 On parse error, `dtclib.parse` raises `ValueError` with line/column
 information.
+
+## Example browser: cliowser
+
+`cliowser.py` is a tiny interactive text-mode browser that fetches a page,
+parses it with `dtclib`, and uses `csonpath` to inspect the tree.
+
+Install the browser dependencies (needs `csonpath` and `requests`):
+
+```sh
+.venv/bin/pip install -e '.[browser]' -e ../csonpath
+```
+
+Run it:
+
+```sh
+.venv/bin/python examples/cliowser.py https://example.com
+```
+
+Commands inside the prompt:
+
+- `p` — print page (URL, title, extracted text)
+- `l` — list links found on the page
+- `i` — show tag statistics (Python) and hrefs/srcs (csonpath)
+- `r` — dump the raw parsed tree as JSON
+- `m` — toggle between plain text and markdown rendering
+- `g <n>` — navigate to link number `n`
+- `b` — go back to the previous page
+- `q` — quit
+
+Start in markdown mode with `--markdown`:
+
+```sh
+.venv/bin/python examples/cliowser.py --markdown https://example.com
+```
