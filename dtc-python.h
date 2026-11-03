@@ -152,6 +152,15 @@ static PyObject *dtc_python_push_strl(PyObject *parent_array, size_t vl,
 }
 #define DTC_PUSH_STRL(parent_array, vl, val) dtc_python_push_strl(parent_array, vl, val)
 
+static int dtc_python_pop(PyObject *parent_array)
+{
+	Py_ssize_t size = PyList_GET_SIZE(parent_array);
+	if (DTC_UNLIKELY(size <= 0))
+		return -1;
+	return PyList_SetSlice(parent_array, size - 1, size, NULL);
+}
+#define DTC_POP(parent_array) dtc_python_pop(parent_array)
+
 #include "dtclib.h"
 
 #endif

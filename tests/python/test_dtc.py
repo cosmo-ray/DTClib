@@ -72,4 +72,25 @@ def test_parse_error_unclosed_tag():
         dtclib.parse("<div>")
 
 
+def test_parse_comment_skipped():
+    result = dtclib.parse("<html><body><!-- hidden -->hello</body></html>")
+    body = result[0]["content"][0]
+    assert body["name"] == "body"
+    assert body["content"] == ["hello"]
+
+
+def test_parse_comment_only():
+    assert dtclib.parse("<!-- just a comment -->") == [""]
+
+
+def test_parse_unclosed_comment():
+    with pytest.raises(ValueError):
+        dtclib.parse("<html><!-- never closed</html>")
+
+
+def test_parse_unknown_tag_no_stub():
+    result = dtclib.parse("<html><foo>bar</foo></html>")
+    assert result[0]["content"] == ["<foo>bar</foo>"]
+
+
 

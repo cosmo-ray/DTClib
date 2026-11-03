@@ -340,6 +340,18 @@ again:
 			return 0;
 		}
 
+		if ((*html)[1] == '!' && (*html)[2] == '-' && (*html)[3] == '-') {
+			char *c_walker = *html + 4; /* past "<!--" */
+			while (*c_walker && !(*c_walker == '-' && c_walker[1] == '-'
+					      && c_walker[2] == '>')) {
+				dtc_pre_next(&c_walker, errptr);
+			}
+			if (!*c_walker)
+				DTC_DIE(err, errptr, "unclosed comment");
+			*html = c_walker + 3;
+			goto again;
+		}
+
 		DTC_PTR cur = DTC_NEW_OBJECT(parent_array);
 		if (DTC_IS_NULL(cur))
 			goto err;
@@ -376,6 +388,8 @@ again:
 		what_tag = dtc_html_tag(tag_name_l, tag_name);
 		if (what_tag < 0) {
 			*errptr = errbak;
+			if (DTC_POP(parent_array) < 0)
+				goto err;
 			*html = in_tmp;
 			goto not_a_tag;
 		}

@@ -111,6 +111,14 @@ static struct json_object *DTC_NEW_OBJECT(struct json_object *parent_array)
 	return r;
 }
 
+static int DTC_POP(struct json_object *parent_array)
+{
+	size_t size = json_object_array_length(parent_array);
+	if (DTC_UNLIKELY(size == 0))
+		return -1;
+	return json_object_array_del_idx(parent_array, size - 1, 1);
+}
+
 #define DTC_FREE json_object_put
 
 #define DTC_PTR struct json_object *
