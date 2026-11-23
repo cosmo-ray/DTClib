@@ -19,7 +19,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
-          python-version: "3.x"
+          python-version: "3.14"
 
       - name: Install dependencies
         run: |
@@ -30,7 +30,10 @@ jobs:
         run: make tests-c
 
       - name: Build and test Python
-        run: make tests-py
+        run: |
+          make venv
+          .venv/bin/pip install -e '.[dev,browser]'
+          .venv/bin/python -m pytest
 
   build-macos:
     name: Build and test on macOS
@@ -41,7 +44,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
-          python-version: "3.x"
+          python-version: "3.14"
 
       - name: Install, build and test Python
         run: |
@@ -58,7 +61,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
-          python-version: "3.x"
+          python-version: "3.14"
 
       - name: Install MinGW
         run: |
