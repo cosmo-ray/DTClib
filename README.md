@@ -117,9 +117,19 @@ make tests      # both
 make dist       # sdist + wheel in dist/
 ```
 
-Releases are cut with `./do-release X.Y.Z` then tagged; the `pypi.yaml`
-workflow builds the wheels and publishes the tagged version with the
-`PYPI_TOKEN` repository secret.
+Releases are cut with
+[bump-my-version](https://github.com/callowayproject/bump-my-version),
+installed by `make pip-dev`:
+
+```sh
+bump-my-version bump patch   # or minor / major
+git push --follow-tags
+```
+
+It bumps `version` in `pyproject.toml`, commits `Bump to X.Y.Z` and creates
+the `vX.Y.Z` tag. Pushing the tag triggers `pypi.yaml`, which builds the
+wheels and publishes with the `PYPI_TOKEN` repository secret. Preview a bump
+with `bump-my-version bump patch --dry-run -vv`.
 
 ## License
 
