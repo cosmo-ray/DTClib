@@ -1,0 +1,77 @@
+name: tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  build-linux:
+    name: Build and test on Linux
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update --fix-missing
+          sudo apt-get install -y -f -o Acquire::Retries=3 libjson-c-dev pkg-config
+
+      - name: Build and test C
+        run: make tests-c
+
+      - name: Build and test Python
+        run: make tests-py
+
+  build-macos:
+    name: Build and test on macOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: "3.x"
+
+      - name: Install, build and test Python
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[dev,browser]'
+          python -m pytest tests/python
+
+  build-windows:
+    name: Build and test on Windows (mingw)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: "3.x"
+
+      - name: Install MinGW
+        run: |
+          choco install mingw -y
+          echo "C:\ProgramData\chocolatey\bin" >> $env:GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install pytest requests csonpath
+
+      - name: Build
+        run: python -m pip install --no-build-isolation -e .
+
+      - name: Test
+        run: python -m pytest tests/python
