@@ -5,7 +5,7 @@ PIP := $(VENV)/bin/pip
 JSON_C_CFLAGS := $(shell pkg-config --cflags json-c)
 JSON_C_LDFLAGS := $(shell pkg-config --libs json-c)
 
-.PHONY: all venv pip-dev tests-py tests-c json-cli tests clean
+.PHONY: all venv pip-dev tests-py tests-c json-cli tests dist clean
 
 all: json-cli
 
@@ -31,9 +31,14 @@ tests-c: json-cli
 
 tests: tests-py tests-c
 
+dist: venv
+	rm -rf build dist *.egg-info
+	$(PIP) install -q --upgrade build
+	$(PYTHON) -m build
+
 clean:
 	rm -f json-cli
-	rm -rf build
+	rm -rf build dist
 	rm -rf *.egg-info
 	find . -name '*.so' -delete
 	find . -type d -name __pycache__ -exec rm -rf {} +

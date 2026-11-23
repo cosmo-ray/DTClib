@@ -1,0 +1,11 @@
+include Makefile
+include pyproject.toml
+include *.h
+include README.md
+include LICENSE
+recursive-include tests *.py
+include tests/html/test_attr.html
+include tests/html/test_doctype.html
+recursive-include examples *.py
+recursive-exclude * __pycache__
+recursive-exclude * *.pyc

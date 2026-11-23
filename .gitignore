@@ -1,11 +1,20 @@
 .venv/
+venv/
 build/
+dist/
+wheelhouse/
 *.egg-info/
 *.so
+*.whl
 __pycache__/
 *.pyc
 .pytest_cache/
 json-cli
+a.out
 *~
 \#*\#
 
+# third-party pages kept locally as parser fixtures, not redistributed
+tests/html/*
+!tests/html/test_attr.html
+!tests/html/test_doctype.html

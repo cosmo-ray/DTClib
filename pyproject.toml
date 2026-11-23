@@ -1,21 +1,67 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=77.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "dtclib"
 version = "0.1.0"
+description = "Dom Tree Containerized: parse HTML into a JSON-like tree of dicts and lists"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.9"
+authors = [
+    { name = "Matthias Gatto" }
+]
+keywords = [
+    "html",
+    "parser",
+    "dom",
+    "tree",
+    "json",
+    "c",
+    "header-only",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: C",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Text Processing :: Markup :: HTML",
+]
 
-[tool.setuptools]
-packages = []
+[project.urls]
+Homepage = "https://github.com/cosmo-ray/DTClib"
+Repository = "https://github.com/cosmo-ray/DTClib"
+Issues = "https://github.com/cosmo-ray/DTClib/issues"
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.3.5"
+    "pytest>=8.3.5",
 ]
 browser = [
-    "requests>=2.32.0"
+    "requests>=2.32.0",
+    "csonpath>=0.21.0",
 ]
+
+[tool.setuptools]
+packages = []  # no Python packages, just an extension
+
+[tool.cibuildwheel]
+test-requires = "pytest"
+test-command = "pytest {project}/tests/python/test_dtc.py"
+
+[tool.cibuildwheel.windows]
+# DTClib is a C project: Windows wheels are built with mingw-w64, not MSVC.
+before-build = "choco install mingw -y"
 
 [tool.pytest.ini_options]
 testpaths = ["tests/python"]
